@@ -110,7 +110,14 @@ class Downloader:
         url = self._get_url()
         SLOG.debug("Downloading", name=self._name, url=url)
         print(f"Downloading {url} to {tarball}")
-        urllib.request.urlretrieve(url, tarball, ProgressBar())
+        #urllib.request.urlretrieve(url, tarball, ProgressBar())
+        #run wget 
+        run_command(
+            cmd=["wget", "-O", tarball, url],
+            capture=True,
+            check=True,
+            cwd=self._workspace_root,
+        )
         SLOG.debug("Finished Downloading", name=self._name, tarball=tarball)
 
         SLOG.debug("Extracting", name=self._name, into=self.result_dir)

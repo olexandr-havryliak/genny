@@ -1,8 +1,5 @@
 # https://help.github.com/articles/about-code-owners/
 
-# global match unless overridden below
-* @mongodb/dev-prod-tips
-
 # everyone can contribute to workloads and actors, they are unowned, unless overridden below
 src/workloads/
 src/cast_core/
