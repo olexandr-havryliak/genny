@@ -30,6 +30,13 @@ you consider more useful.''')
         The results for ExampleActor will be stored in something like
         '.../WorkloadOutput/CedarMetrics/ExampleActor.ftdc. Your regex should assume it is working
         with just the actor name: "ExampleActor" in this case.""")
+
+    parser.add_argument(
+        '-o',
+        '--outputGraphName',
+        default='graph.png',
+        help="""File name for the graph""")
+
     return parser.parse_args()
 
 def parse_actor_regex(args):
@@ -73,6 +80,7 @@ def extract_actor_name(actor_file):
 def main():
     args = parse_args()
     actor_regex = parse_actor_regex(args)
+
     metrics_path = default_metrics_path.split(os.path.sep)
     result_ftdc_files = find_ftdc_files(metrics_path)
 
@@ -80,8 +88,10 @@ def main():
         raise AssertionError("No results found for graph")
 
     df = {}
-    events_per_sec = {}
-    interval_size = 10**9 #seconds
+    events_per_sec_total = {}
+    events_per_sec_dur = {}
+    summary = pandas.DataFrame()
+    interval_size = 10**9 #nanosecond to seconds
     plot.figure(figsize=(20, 12))
 
     for actor_file in result_ftdc_files:
@@ -91,19 +101,31 @@ def main():
         try:
             tmp_file = convert_to_csv(actor_file)
             df[actor_name] = pandas.read_csv(tmp_file)
-            df[actor_name]['interval'] = (df[actor_name]['timers.total'] // interval_size) * interval_size
-            events_per_sec[actor_name] = df[actor_name].groupby('interval').size()
-            events_per_sec[actor_name].index = events_per_sec[actor_name].index / interval_size
-            plot.plot(events_per_sec[actor_name].index, events_per_sec[actor_name].values,label=actor_name)
+            # for graph we need timers.total
+            df[actor_name]['interval_total'] = df[actor_name]['timers.total'] // interval_size
+            events_per_sec_total[actor_name] = df[actor_name].groupby('interval_total').size()
+            plot.plot(events_per_sec_total[actor_name].index, events_per_sec_total[actor_name].values,label=actor_name)
+            # for summary we need timers.dur
+            df[actor_name]['interval_dur'] = df[actor_name]['timers.dur'] // interval_size
+            events_per_sec_dur[actor_name] = df[actor_name].groupby('interval_dur').size()
+            summary[actor_name] = events_per_sec_dur[actor_name].describe()
+            summary[actor_name]['Actor'] = actor_name
         except pandas.errors.EmptyDataError:
             continue
 
+    #transpose index and columns for summary
+    summary = summary.transpose()
+    summary.rename(columns={'count': 'duration(seconds)', 'mean': 'mean(events/sec)','std': 'std(events/sec)','max': 'max(events/sec)', 'min': 'min(events/sec)'}, inplace=True)
+    print(summary)
+
+    #draw the graph
     plot.xlabel('Time seconds')
     plot.ylabel('Events/sec')
     plot.legend()
     plot.grid(True)
     plot.tight_layout()
-    plot.savefig('graph.png')
+    graph_path = path_to_string(metrics_path + [args.outputGraphName])
+    plot.savefig(graph_path)
 
 if __name__ == "__main__":
     main()
