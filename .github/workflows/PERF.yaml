@@ -1,0 +1,55 @@
+name: PERF
+
+on:
+  workflow_dispatch:
+    inputs:
+      psmdb_version:
+        description: "psmdb version"
+        required: false
+
+  push:
+    branches:
+      - main
+
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        psmdb: ["psmdb-44", "psmdb-50", "psmdb-60", "psmdb-70"]
+    steps:
+    - uses: actions/checkout@v3
+    - name: setup genny
+      run: |
+        sudo mkdir -p /data/mci
+        I=`whoami` && sudo chown $I -R /data/mci
+        sudo apt -y update
+        sudo apt install -y build-essential git wget python3 python3-pip python3-venv cmake ninja-build libsnappy-dev
+        ./run-genny install
+        pip install -r ./src/workloads/contrib/analysis/requirements.txt
+        pip install -r ./src/workloads/contrib/graph/requirements.txt
+    - name: setup mongo
+      run: |
+        wget https://repo.percona.com/apt/percona-release_latest.$(lsb_release -sc)_all.deb
+        sudo dpkg -i percona-release_latest.$(lsb_release -sc)_all.deb
+        sudo percona-release enable ${{ matrix.psmdb }} release
+        sudo apt update
+        sudo apt install percona-server-mongodb
+        sudo systemctl start mongod
+    - name: run workload
+      run: | 
+        ./run-genny workload src/workloads/scale/MixedWorkloadsGennyLite.yml
+    - name: generate results
+      run: |
+        python3 src/workloads/contrib/graph/test_result_graph.py -a ".*Crud.*" -o ${{ matrix.psmdb }}.png
+    - name: upload aritifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: graph-${{ matrix.psmdb }}
+        path: build/WorkloadOutput/CedarMetrics/${{ matrix.psmdb }}.png
