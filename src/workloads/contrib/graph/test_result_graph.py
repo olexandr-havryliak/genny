@@ -109,7 +109,6 @@ def main():
             df[actor_name]['interval_dur'] = df[actor_name]['timers.dur'] // interval_size
             events_per_sec_dur[actor_name] = df[actor_name].groupby('interval_dur').size()
             summary[actor_name] = events_per_sec_dur[actor_name].describe()
-            summary[actor_name]['Actor'] = actor_name
         except pandas.errors.EmptyDataError:
             continue
 
