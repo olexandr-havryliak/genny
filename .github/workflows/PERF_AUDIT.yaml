@@ -1,4 +1,4 @@
-name: PERF
+name: PERF_AUDIT
 
 on:
   workflow_dispatch:
@@ -41,8 +41,8 @@ jobs:
         sudo percona-release enable ${{ matrix.psmdb }} release
         sudo apt update
         sudo apt install percona-server-mongodb
-        sudo sed 's/#auditLog:/auditLog:\n  destination: syslog\nsetParameter:\n  auditAuthorizationSuccess: true/' -i /etc/mongod.conf
-        sudo systemctl start mongod
+        sudo sed 's/#auditLog:/auditLog:\n  destination: file\n  path: \/tmp\/audit.json\nsetParameter:\n  auditAuthorizationSuccess: true/' -i /etc/mongod.conf
+        sudo systemctl restart mongod
     - name: run workload
       run: | 
         ./run-genny workload src/workloads/scale/MixedWorkloadsGennyLite.yml
@@ -52,5 +52,7 @@ jobs:
     - name: upload aritifact
       uses: actions/upload-artifact@v4
       with:
-        name: graph-${{ matrix.psmdb }}
-        path: build/WorkloadOutput/CedarMetrics/${{ matrix.psmdb }}.png
+        name: artifact-${{ matrix.psmdb }}
+        path: |
+          build/WorkloadOutput/CedarMetrics/${{ matrix.psmdb }}.png
+          /tmp/audit.json
