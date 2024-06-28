@@ -46,6 +46,10 @@ jobs:
     - name: run workload
       run: | 
         ./run-genny workload src/workloads/scale/MixedWorkloadsGennyLite.yml
+    - name: change permissions for audit log
+      run: |
+        sudo systemctl stop mongod
+        sudo chmod 666 /tmp/audit.json
     - name: generate results
       run: |
         python3 src/workloads/contrib/graph/test_result_graph.py -a ".*Crud.*" -o ${{ matrix.psmdb }}.png
