@@ -22,7 +22,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        psmdb: ["psmdb-44", "psmdb-50", "psmdb-60", "psmdb-70"]
+        psmdb: ["psmdb-50", "psmdb-60", "psmdb-70", "psmdb-80"]
     steps:
     - uses: actions/checkout@v3
     - name: setup genny
@@ -38,7 +38,7 @@ jobs:
       run: |
         wget https://repo.percona.com/apt/percona-release_latest.$(lsb_release -sc)_all.deb
         sudo dpkg -i percona-release_latest.$(lsb_release -sc)_all.deb
-        sudo percona-release enable ${{ matrix.psmdb }} release
+        sudo percona-release enable ${{ matrix.psmdb }} testing
         sudo apt update
         sudo apt install percona-server-mongodb
         sudo systemctl start mongod
