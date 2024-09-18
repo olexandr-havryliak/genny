@@ -7,6 +7,29 @@ We parse the `keywords`, `owner`, `description`, and the workload name from each
 If you want to update the documentation please update the workload's respective yaml file, run `./run-genny generate-docs`, and commit the changes.
 
 
+## [ReadOnlyMultiThreaded](https://www.github.com/mongodb/genny/blob/master/src/workloads/basic/ReadOnlyMultiThreaded.yml)
+### Owner 
+Product Performance 
+
+
+### Support Channel
+[#performance](https://mongodb.enterprise.slack.com/archives/C0V3KSB52)
+
+
+### Description
+Runs a multi-threaded, read-only workload comprising of `findOne` commands that all target the
+same document. The workload inserts a single document and then spawns multiple worker threads to
+retrieve it. The primary objective of this benchmark is to produce stable results that would help
+with identifying regressions introduced by individual commits, and not necessarily measuring the
+end-to-end database performance. Therefore, look for the average throughput and latency of running
+`findOne` commands reported by this benchmark.
+
+  
+
+### Keywords
+findOne, MultiThreaded, stable, autoReverter 
+
+
 ## [ChangeEventApplication](https://www.github.com/mongodb/genny/blob/master/src/workloads/c2c/ChangeEventApplication.yml)
 ### Owner 
 Product Performance 
@@ -2340,31 +2363,6 @@ This workload measures performance for diagnostic top command.
 top, command, admin, stats 
 
 
-## [ColumnStoreIndex](https://www.github.com/mongodb/genny/blob/master/src/workloads/query/ColumnStoreIndex.yml)
-### Owner 
-Query Execution 
-
-
-### Support Channel
-[#query-execution](https://mongodb.enterprise.slack.com/archives/CKABWR2CT)
-
-
-### Description
-This workload compares the query performance with columnar indexes to performances without them.
-
-The workload consists of the following phases and actors:
-  0. Warm up cache.
-  1. Run queries with columnstore indexes.
-  2. Drop columnstore indexes.
-  3. Warm up cache again for regular scans.
-  4. Run queries without columnstore indexes.
-
-  
-
-### Keywords
-columnstore, analytics 
-
-
 ## [ConstantFoldArithmetic](https://www.github.com/mongodb/genny/blob/master/src/workloads/query/ConstantFoldArithmetic.yml)
 ### Owner 
 @mongodb/query 
@@ -2396,89 +2394,6 @@ on the level of associativity in the optimizer.
   MiddleFieldpath should see a speedup that puts its performance in between "no associativity" and "full associativity".
   TailingFieldpath should speed up back to its performance in the "full associativity" case.
 
-
-
-## [CsiFragmentedInsertsFlat](https://www.github.com/mongodb/genny/blob/master/src/workloads/query/CsiFragmentedInsertsFlat.yml)
-### Owner 
-Query Execution 
-
-
-### Support Channel
-[#query-execution](https://mongodb.enterprise.slack.com/archives/CKABWR2CT)
-
-
-### Description
-This workload compares performance of inserts into a collection with only the default _id index,
-and in presence of the columnstore index. It uses an artificial data set with a wide overall
-schema and narrow individual objects to model fragmented access to CSI, which clusters entries by
-path. The data size is relatively small (1e6 documents yield ~175MB data size and ~105MB storage
-size).
-We would like to be able to correlate the results of this workload with the similar one that uses
-nested data (CsiFragmentedInsertsNested.yml). Please make sure to update both when making changes.
-
-  
-
-### Keywords
-columnstore, insert 
-
-
-## [CsiFragmentedInsertsNested](https://www.github.com/mongodb/genny/blob/master/src/workloads/query/CsiFragmentedInsertsNested.yml)
-### Owner 
-Query Execution 
-
-
-### Support Channel
-[#query-execution](https://mongodb.enterprise.slack.com/archives/CKABWR2CT)
-
-
-### Description
-This workload compares performance of inserts into a collection with only the default _id index
-and in presence of a full columnstore index. We are not comparing to wildcard index because the
-nested data makes creating of a wildcard index too slow. Before changing any of the parameters in
-this workload please make sure the results can be correlated with 'CsiFragmentedInsertsFlat.yml'.
-As the approach in this workload is the same as in 'CsiFragmentedInsertsFlat.yml' with the exception
-of data used by the loader (and not comparing to the wildcard index), comments are intentionally
-omitted, please refer to the "flat" workload for the details.
-
-  
-
-### Keywords
-columnstore, insert 
-
-
-## [CsiHeavyDiskUsage](https://www.github.com/mongodb/genny/blob/master/src/workloads/query/CsiHeavyDiskUsage.yml)
-### Owner 
-Query Execution 
-
-
-### Support Channel
-[#query-execution](https://mongodb.enterprise.slack.com/archives/CKABWR2CT)
-
-
-### Description
-This workload measures bulk insert performance against a collection named "coll" in a database
-named "heavy_io". The collection and database must be set up before running the workload. The
-workload itself has no expectations as far as the size or schema of the data are concerned but it
-is only useful when being run against larger datasets to actually generate heavy disk IO.
-
-Because the workload is targeting large external datasets, it's expected that they would need long
-setup time. To avoid setting up twice, we run two, essentially independent, experiments one after
-anoter. We don't expect the internal state of WiredTiger to matter as the experiments involve
-different indexes, and the inserts into the rowstore itself are ammortized over the large number
-of batches in each experiment.
-
-The purpose of this workload is to compare the insert performance in the following two situations:
- - "Default" indexes are present - a set of indexes that are typically present on the target
-   dataset, those that would be useful for the typical query workloads. These indexes should be
-   created prior to running the workload.
- - Only a column store index is present. A column store index isn't expected to realistically
-   replace all other indexes in production, but it could replace some and knowing its relative
-   performance cost could help make that decision.
-
-  
-
-### Keywords
-columnstore, analytics, scale, insert 
 
 
 ## [CumulativeWindows](https://www.github.com/mongodb/genny/blob/master/src/workloads/query/CumulativeWindows.yml)
@@ -3372,6 +3287,44 @@ The phases are:
 
 
 
+## [NonSearchHybridScoring](https://www.github.com/mongodb/genny/blob/master/src/workloads/query/NonSearchHybridScoring.yml)
+### Owner 
+@mongodb/query 
+
+
+
+### Description
+This test is designed to test a hybrid scoring like use-case, but without using any atlas search
+features, since (at the time of this writing) they are complex to set up in our test
+infrastructure.
+
+Our made up scenario to mimic this use case will be as follows:
+- Our collection will have documents which mimic businesses such as restaurants.
+- Our query will request certain restaurants near a point, and want to rank them in a fused order
+  based on both their distance from the point and their average rating. (Preferring the first
+  result to be one that is reasonably close with the highest reviews).
+
+The phases are:
+0. Create collection
+1. Insert data + create indexes
+2. Quiesce
+3. Rank Fusion style pipeline style #1
+4. Quiesce
+5. Rank Fusion style pipeline style #2
+6. Quiesce
+7. Rank Fusion style pipeline style #3
+
+We use a couple different styles of expressing the same pipeline since they all get the job done,
+but currently perform differently. In the long run, it would be good to track performance of all
+of them in case a user typed it a certain way and doesn't realize some performance gains that
+another version of the syntax uses.
+
+  
+
+### Keywords
+unionWith, aggregate, geoNear, sbe, group 
+
+
 ## [OneMDocCollection_LargeDocIntId](https://www.github.com/mongodb/genny/blob/master/src/workloads/query/OneMDocCollection_LargeDocIntId.yml)
 ### Owner 
 @mongodb/query 
@@ -3583,31 +3536,6 @@ share a common prefix. Crucially, these queries never match a document in the co
 This workload stresses the query execution engine by running queries over a set of paths which
 share a common prefix. Crucially, these queries never match a document in the collection.
 
-
-
-## [SSBColumnStoreIndex](https://www.github.com/mongodb/genny/blob/master/src/workloads/query/SSBColumnStoreIndex.yml)
-### Owner 
-Query Execution 
-
-
-### Support Channel
-[#query-execution](https://mongodb.enterprise.slack.com/archives/CKABWR2CT)
-
-
-### Description
-This workload compares the query performance of SSB (star schema benchmark) queries with columnar indexes to performances without them.
-
-The workload consists of the following phases and actors:
-  1. Run SSB queries with columnstore indexes.
-  2. Drop columnstore indexes.
-  3. Run SSB queries without columnstore indexes.
-
-The DSI test_control will drop caches inbetween each test to measure cold cache performance.
-
-  
-
-### Keywords
-columnstore, analytics, SSB 
 
 
 ## [SetWindowFieldsUnbounded](https://www.github.com/mongodb/genny/blob/master/src/workloads/query/SetWindowFieldsUnbounded.yml)
