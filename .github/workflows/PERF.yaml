@@ -31,6 +31,7 @@ jobs:
         I=`whoami` && sudo chown $I -R /data/mci
         sudo apt -y update
         sudo apt install -y build-essential git wget python3 python3-pip python3-venv cmake ninja-build libsnappy-dev
+        pip3 install --upgrade pip
         ./run-genny install
         pip install -r ./src/workloads/contrib/analysis/requirements.txt
         pip install -r ./src/workloads/contrib/graph/requirements.txt
